@@ -1,5 +1,4 @@
 use crate::days::Day;
-use std::fmt::Display;
 
 #[derive(Default)]
 pub struct DayXXXX {}
@@ -7,12 +6,12 @@ pub struct DayXXXX {}
 impl DayXXXX {}
 
 impl Day for DayXXXX {
-    fn part_one(&self, input: &str) -> Box<dyn Display> {
-        Box::new(input)
+    fn part_one(&self, input: &str) -> String {
+        input
     }
 
-    fn part_two(&self, input: &str) -> Box<dyn Display> {
-        Box::new(input)
+    fn part_two(&self, input: &str) -> String {
+        input
     }
 }
 

@@ -16,18 +16,20 @@ impl DayOne {
     }
 
     fn find_basement(floors: &str) -> usize {
-        let mut sum = 0;
-        for i in 0..floors.len() {
-            match floors.chars().nth(i).expect("") {
-                '(' => sum += 1,
-                ')' => sum -= 1,
-                _ => (),
-            }
-            if sum < 0 {
-                return i + 1;
-            }
-        }
-        0
+        floors
+            .chars()
+            .enumerate()
+            .scan(0, |sum, (i, ch)| {
+                match ch {
+                    '(' => *sum += 1,
+                    ')' => *sum -= 1,
+                    _ => (),
+                }
+                Some((i, *sum))
+            })
+            .find(|&(_, sum)| sum < 0)
+            .map(|(i, _)| i + 1)
+            .unwrap_or(0)
     }
 }
 
