@@ -15,16 +15,22 @@ impl DayFive {
             .filter(|line| line.chars().zip(line.chars().skip(1)).any(|(a, b)| a == b))
             .count() as u32
     }
+
+    fn count_nice_strings_v2(strings: &str) -> u32 {
+        strings
+            .lines()
+            .filter(|line| line.chars().zip(line.chars().skip(1)).any(|(a, b)| a == b))
+            .count() as u32
+    }
 }
 
 impl Day for DayFive {
     fn part_one(&self, input: &str) -> String {
-        // too low: 147
         DayFive::count_nice_strings(input).to_string()
     }
 
     fn part_two(&self, input: &str) -> String {
-        input.to_string()
+        DayFive::count_nice_strings_v2(input).to_string()
     }
 }
 
