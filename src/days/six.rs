@@ -1,7 +1,7 @@
 use crate::days::Day;
+use rayon::prelude::*;
 use regex::Regex;
-use std::collections::HashSet;
-
+use std::collections::HashMap;
 enum Instruction {
     TurnOn,
     TurnOff,
@@ -23,7 +23,7 @@ impl Instruction {
 pub struct DaySix {}
 
 impl DaySix {
-    fn perform(instructions: &str) -> u32 {
+    fn perform(instructions: &str, part_one: &bool) -> u32 {
         let re = Regex::new(r"([a-z\s]+)(\d+),(\d+)[a-z\s]+(\d+),(\d+)").unwrap();
         instructions
             .lines()
@@ -34,39 +34,58 @@ impl DaySix {
                 let br: (i32, i32) = (caps[4].parse().unwrap(), caps[5].parse().unwrap());
                 (inst, tl, br)
             })
-            .fold(HashSet::new(), |mut lights, (instruction, tl, br)| {
+            .par_bridge()
+            .map(|(instruction, tl, br)| {
+                let mut lights: HashMap<(i32, i32), i32> = HashMap::new();
                 for y in tl.1..=br.1 {
                     for x in tl.0..=br.0 {
                         let new_coord = (x, y);
-                        match (&instruction, lights.get(&new_coord)) {
-                            (Instruction::TurnOn, _) => {
-                                lights.insert(new_coord);
+                        let light_level = lights.entry(new_coord).or_default();
+                        match (&instruction, *light_level, part_one) {
+                            (Instruction::TurnOn, _, true) | (Instruction::Toggle, 0, true) => {
+                                *light_level = 1;
                             }
-                            (Instruction::TurnOff, _) => {
-                                lights.remove(&new_coord);
+                            (Instruction::TurnOff, _, true) | (Instruction::Toggle, 1, true) => {
+                                *light_level = 0;
                             }
-                            (Instruction::Toggle, Some(_)) => {
-                                lights.remove(&new_coord);
+                            (Instruction::TurnOn, _, false) => {
+                                *light_level += 1;
                             }
-                            (Instruction::Toggle, None) => {
-                                lights.insert(new_coord);
+                            (Instruction::TurnOff, _, false) => {
+                                *light_level -= 1;
                             }
+                            (Instruction::Toggle, _, false) => {
+                                *light_level += 2;
+                            }
+                            _ => {}
                         }
                     }
                 }
                 lights
             })
-            .len() as u32
+            .reduce(HashMap::new, |mut acc, lights| {
+                lights.iter().for_each(|(key, light)| {
+                    acc.entry(*key)
+                        .and_modify(|e| *e = (*e + light).max(0))
+                        .or_insert(*light);
+                });
+                acc
+            })
+            .values()
+            .map(|v| *v.max(&0) as u32)
+            .sum()
     }
 }
 
 impl Day for DaySix {
     fn part_one(&self, input: &str) -> String {
-        DaySix::perform(input).to_string()
+        DaySix::perform(input, &true).to_string()
     }
 
     fn part_two(&self, input: &str) -> String {
-        input.to_string()
+        // too low: 575856
+        // too high: 15070510
+        DaySix::perform(input, &false).to_string()
     }
 }
 
@@ -90,7 +109,16 @@ pub mod test {
     #[test]
     fn test_part_two() {
         let day = DaySix::default();
-        let cases = vec![("", 0)];
+        let cases = vec![
+            ("turn on 0,0 through 0,0", 1),
+            ("toggle 0,0 through 99,99", 20_000),
+            ("toggle 0,0 through 0,0\nturn off 0,0 through 0,0", 1),
+            (
+                "turn on 0,0 through 0,0\ntoggle 0,0 through 99,99\nturn off 0,0 through 4,4",
+                19_976,
+            ),
+            ("turn on 0,0 through 0,0\ntoggle 0,0 through 99,99", 20_001),
+        ];
         for (input, expected) in cases {
             assert_eq!(day.part_two(input), expected.to_string())
         }
