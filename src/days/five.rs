@@ -37,10 +37,10 @@ impl DayFive {
                             if pair_indexes.intersection(&indexes).count() == 0 {
                                 pair_indexes.extend(indexes);
                             }
-                            Some(pair_indexes.len() / 2)
+                            Some(pair_indexes.len())
                         },
                     )
-                    .any(|count| count >= 2)
+                    .any(|count| count >= 4)
             })
             .filter(|line| {
                 line.chars()
