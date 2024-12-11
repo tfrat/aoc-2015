@@ -1,5 +1,6 @@
 use crate::days::Day;
 use regex::Regex;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
 pub struct DayFive {}
@@ -19,7 +20,34 @@ impl DayFive {
     fn count_nice_strings_v2(strings: &str) -> u32 {
         strings
             .lines()
-            .filter(|line| line.chars().zip(line.chars().skip(1)).any(|(a, b)| a == b))
+            .filter(|line| {
+                line.chars()
+                    .enumerate()
+                    .zip(line.chars().enumerate().skip(1))
+                    .map(|((first_pos, first_letter), (second_pos, second_letter))| {
+                        (
+                            [first_letter, second_letter].iter().collect::<String>(),
+                            HashSet::from([first_pos, second_pos]),
+                        )
+                    })
+                    .fold(
+                        HashMap::new(),
+                        |mut pairs: HashMap<String, HashSet<usize>>, (pair, indexes)| {
+                            let pair_indexes = pairs.entry(pair).or_default();
+                            if pair_indexes.intersection(&indexes).count() == 0 {
+                                pair_indexes.extend(indexes);
+                            }
+                            pairs
+                        },
+                    )
+                    .values()
+                    .any(|indexes| indexes.len() >= 4)
+            })
+            .filter(|line| {
+                line.chars()
+                    .zip(strings.chars().skip(2))
+                    .any(|(left, right)| left == right)
+            })
             .count() as u32
     }
 }
@@ -57,7 +85,12 @@ pub mod test {
     #[test]
     fn test_part_two() {
         let day = DayFive::default();
-        let cases = vec![("", 0)];
+        let cases = vec![
+            ("qjhvhtzxzqqjkmpb", 1),
+            ("xxyxx", 1),
+            ("uurcxstgmygtbstg", 0),
+            ("ieodomkazucvgmuy", 0),
+        ];
         for (input, expected) in cases {
             assert_eq!(day.part_two(input), expected.to_string())
         }
