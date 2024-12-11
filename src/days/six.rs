@@ -1,5 +1,4 @@
 use crate::days::Day;
-use rayon::prelude::*;
 use regex::Regex;
 use std::collections::HashMap;
 enum Instruction {
@@ -34,9 +33,7 @@ impl DaySix {
                 let br: (i32, i32) = (caps[4].parse().unwrap(), caps[5].parse().unwrap());
                 (inst, tl, br)
             })
-            .par_bridge()
-            .map(|(instruction, tl, br)| {
-                let mut lights: HashMap<(i32, i32), i32> = HashMap::new();
+            .fold(HashMap::new(), |mut lights, (instruction, tl, br)| {
                 for y in tl.1..=br.1 {
                     for x in tl.0..=br.0 {
                         let new_coord = (x, y);
@@ -51,7 +48,7 @@ impl DaySix {
                             (Instruction::TurnOn, _, false) => {
                                 *light_level += 1;
                             }
-                            (Instruction::TurnOff, _, false) => {
+                            (Instruction::TurnOff, _, false) if *light_level > 0 => {
                                 *light_level -= 1;
                             }
                             (Instruction::Toggle, _, false) => {
@@ -62,14 +59,6 @@ impl DaySix {
                     }
                 }
                 lights
-            })
-            .reduce(HashMap::new, |mut acc, lights| {
-                lights.iter().for_each(|(key, light)| {
-                    acc.entry(*key)
-                        .and_modify(|e| *e = (*e + light).max(0))
-                        .or_insert(*light);
-                });
-                acc
             })
             .values()
             .map(|v| *v.max(&0) as u32)
@@ -83,8 +72,6 @@ impl Day for DaySix {
     }
 
     fn part_two(&self, input: &str) -> String {
-        // too low: 575856
-        // too high: 15070510
         DaySix::perform(input, &false).to_string()
     }
 }
@@ -119,8 +106,13 @@ pub mod test {
             ),
             ("turn on 0,0 through 0,0\ntoggle 0,0 through 99,99", 20_001),
         ];
-        for (input, expected) in cases {
-            assert_eq!(day.part_two(input), expected.to_string())
+        for (i, (input, expected)) in cases.iter().enumerate() {
+            assert_eq!(
+                day.part_two(input),
+                expected.to_string(),
+                "Test Case {}",
+                i + 1
+            )
         }
     }
 }
