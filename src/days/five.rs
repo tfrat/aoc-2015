@@ -30,18 +30,17 @@ impl DayFive {
                             HashSet::from([first_pos, second_pos]),
                         )
                     })
-                    .fold(
+                    .scan(
                         HashMap::new(),
-                        |mut pairs: HashMap<String, HashSet<usize>>, (pair, indexes)| {
+                        |pairs: &mut HashMap<String, HashSet<usize>>, (pair, indexes)| {
                             let pair_indexes = pairs.entry(pair).or_default();
                             if pair_indexes.intersection(&indexes).count() == 0 {
                                 pair_indexes.extend(indexes);
                             }
-                            pairs
+                            Some(pair_indexes.len() / 2)
                         },
                     )
-                    .values()
-                    .any(|indexes| indexes.len() >= 4)
+                    .any(|count| count >= 2)
             })
             .filter(|line| {
                 line.chars()
@@ -58,6 +57,7 @@ impl Day for DayFive {
     }
 
     fn part_two(&self, input: &str) -> String {
+        // incorrect: 59
         DayFive::count_nice_strings_v2(input).to_string()
     }
 }
